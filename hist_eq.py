@@ -1,57 +1,76 @@
-#the rquired importss
 import numpy as np
 import cv2
 
-def histogramEqualizationChannel(channel):
-    # calculatte histogram of input channel
-    hist, _ = np.histogram(channel, bins=256, range=(0, 256))
 
-    # we have get the cummulatve dist of the 
-    cdf = hist.cumsum()
+#we need to cal cumli sum
+def calculateCumulativeSum(hist):
+    cdf = np.zeros_like(hist)
+    cum_sum = 0
+    for i in range(len(hist)):
+        cum_sum += hist[i]
+        cdf[i] = cum_sum
+    return cdf
 
-    # nomalizze the cdf and convert it to the type to display the image
-    cdf_normalized = cdf * hist.max() / cdf.max()
-    cdf_normalized = (cdf_normalized - cdf_normalized.min()) * 255 / (cdf_normalized.max() - cdf_normalized.min())
-    cdf_normalized = cdf_normalized.astype(np.uint8)
+def calculateHistogram(channel):
+     # calculatte histogram of input channel
+    hist = np.zeros(256)
+    for pixel in np.nditer(channel):
+        hist[pixel] += 1
+    return hist
 
-    # apply the maping using the cdf
-    return cdf_normalized[channel]
+
 
 def histogramEqualizationColor(img):
-    # Split the image into its R, G, B channels
+    # split the image into rgba
     R, G, B = cv2.split(img)
 
-    # Apply histogram equalization to each channel
+    # apply tio each chanel
     R_eq = histogramEqualizationChannel(R)
     G_eq = histogramEqualizationChannel(G)
     B_eq = histogramEqualizationChannel(B)
 
-    # Merge the equalized channels back together
+    # merge the equlized channels back
     return cv2.merge((R_eq, G_eq, B_eq))
 
-def main():
-    # get image file name from terminal from user
-    imageFile = input("Enter the image file name: ")
 
-    # Load the image in color
+def histogramEqualizationChannel(channel):
+    #the histogram chanel has to be changed maiually
+    hist = calculateHistogram(channel)
+
+    #  calculate cumul distri of the histogrm
+    cdf = calculateCumulativeSum(hist)
+
+    # we need to make sure the cdf is nortmal
+    cdf_min = cdf.min()
+    cdf_max = cdf.max()
+    cdf_normalized = (cdf - cdf_min) * 255 / (cdf_max - cdf_min)
+    cdf_normalized = cdf_normalized.astype(np.uint8)
+
+    # use cdf mapping
+    equalized_channel = np.array([cdf_normalized[pixel] for pixel in channel.flatten()])
+    return equalized_channel.reshape(channel.shape)
+
+
+def main():
+    imageFile = input("Enter the image file name: ")
     orgImage = cv2.imread(imageFile)
 
     if orgImage is None:
-        print("eror: unable to open the image.")
+        print("Error: unable to open the image.")
         return
 
-    # rrun histogram equalisation in the function
     newImage = histogramEqualizationColor(orgImage)
 
     # display the original and resultng images
-    cv2.imshow("original image", orgImage)
-    cv2.imshow("equalised image", newImage)
+    cv2.imshow("Original Image", orgImage)
+    cv2.imshow("Equalized Image", newImage)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    # save the result as a new image
+     # save the result as a new image
     output_file = "equalized_" + imageFile
     cv2.imwrite(output_file, newImage)
 
 if __name__ == "__main__":
     main()
+
