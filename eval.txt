@@ -1,0 +1,4 @@
+HSI	0	/10	You never convert to HIS. See slides.
+Histogram Eq	5	/5	
+README & Bug Free	5	/5	
+Total	10	/20	
